@@ -52,6 +52,7 @@ public final class VectorScoreScript implements LeafSearchScript, ExecutableScri
         put("cosine", new CosineMetricProvider());
         put("dot", new DotMetricProvider());
         put("tsss", new TSSSMetricProvider());
+        put("euclidean", new EuclideanMetricProvider());
     }};
 
     private final Metric metric;
