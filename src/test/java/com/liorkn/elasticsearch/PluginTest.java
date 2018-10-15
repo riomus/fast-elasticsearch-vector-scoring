@@ -95,7 +95,7 @@ public class PluginTest {
                 "          \"inline\": \"binary_vector_score\"," +
                 "          \"lang\": \"knn\"," +
                 "          \"params\": {" +
-                "            \"cosine\": false," +
+                "            \"metric\": \"cosine\"," +
                 "            \"field\": \"embedding_vector\"," +
                 "            \"vector\": [" +
                 "               0.1, 0.2, 0.3" +
