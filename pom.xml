@@ -7,7 +7,7 @@
     <name>elasticsearch-binary-vector-scoring</name>
     <groupId>com.liorkn.elasticsearch</groupId>
     <artifactId>elasticsearch-binary-vector-scoring</artifactId>
-    <version>5.6.12</version>
+    <version>5.6.14</version>
     <description>ElasticSearch Plugin for Binary Vector Scoring</description>
     
     <licenses>
@@ -27,8 +27,8 @@
         <elasticsearch.license.headerDefinition>${project.basedir}/src/main/resources/license-check/license_header_definition.xml</elasticsearch.license.headerDefinition>
 
         <tests.ifNoTests>warn</tests.ifNoTests>
-        <elasticsearch.version>5.6.12</elasticsearch.version>
-        <elasticsearch.version.manifest>5.6.12</elasticsearch.version.manifest>
+        <elasticsearch.version>5.6.14</elasticsearch.version>
+        <elasticsearch.version.manifest>5.6.14</elasticsearch.version.manifest>
         <elasticsearch.test.version>5.6.0</elasticsearch.test.version>
         <commons-io.version>2.4</commons-io.version>
         <httpcore.version>4.4.8</httpcore.version>
@@ -183,6 +183,13 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+                    </configuration>
+                </plugin>
 			<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
