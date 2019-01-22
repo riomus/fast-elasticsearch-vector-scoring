@@ -17,23 +17,22 @@ package com.liorkn.elasticsearch.script;
 import com.liorkn.elasticsearch.Util;
 import com.liorkn.elasticsearch.script.metrics.*;
 import org.apache.lucene.index.BinaryDocValues;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.store.ByteArrayDataInput;
-import org.elasticsearch.common.Nullable;
-import org.elasticsearch.script.ExecutableScript;
-import org.elasticsearch.script.LeafSearchScript;
-import org.elasticsearch.script.ScriptException;
+import org.elasticsearch.script.ScoreScript;
+import org.elasticsearch.search.lookup.LeafDocLookup;
+import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Script that scores documents based on cosine similarity embedding vectors.
  */
-public final class VectorScoreScript implements LeafSearchScript, ExecutableScript {
+public final class VectorScoreScript extends ScoreScript {
 
     public static final String SCRIPT_NAME = "binary_vector_score";
 
@@ -41,9 +40,14 @@ public final class VectorScoreScript implements LeafSearchScript, ExecutableScri
 
     // the field containing the vectors to be scored against
     public final String field;
-
-    private int docId;
-    private BinaryDocValues binaryEmbeddingReader;
+    private final SearchLookup lookup;
+    private final LeafReaderContext leafContext;
+    private  BinaryDocValues binaryValues;
+    int docId ;
+    @Override
+    public void setDocument(int docId) {
+        this.docId = docId;
+    }
 
     private final double[] inputVector;
 
@@ -56,74 +60,30 @@ public final class VectorScoreScript implements LeafSearchScript, ExecutableScri
     }};
 
     private final Metric metric;
-    @Override
-    public long runAsLong() {
-        return ((Number)this.run()).longValue();
-    }
-    @Override
-    public double runAsDouble() {
-        return ((Number)this.run()).doubleValue();
-    }
-    @Override
-    public void setNextVar(String name, Object value) {}
-    @Override
-    public void setDocument(int docId) {
-        this.docId = docId;
-    }
-
-    public void setBinaryEmbeddingReader(BinaryDocValues binaryEmbeddingReader) {
-        if(binaryEmbeddingReader == null) {
-            throw new IllegalStateException("binaryEmbeddingReader can't be null");
-        }
-        this.binaryEmbeddingReader = binaryEmbeddingReader;
-    }
 
 
-    /**
-     * Factory that is registered in
-     * {@link VectorScoringPlugin#onModule(org.elasticsearch.script.ScriptModule)}
-     * method when the plugin is loaded.
-     */
-    public static class Factory {
-
-        /**
-         * This method is called for every search on every shard.
-         * 
-         * @param params
-         *            list of script parameters passed with the query
-         * @return new native script
-         */
-        public ExecutableScript newScript(@Nullable Map<String, Object> params) throws ScriptException {
-            return new VectorScoreScript(params);
-        }
-
-        /**
-         * Indicates if document scores may be needed by the produced scripts.
-         *
-         * @return {@code true} if scores are needed.
-         */
-        public boolean needsScores() {
-            return false;
-        }
-
-    }
-
-    
     /**
      * Init
      * @param params index that a scored are placed in this parameter. Initialize them here.
      */
     @SuppressWarnings("unchecked")
-    public VectorScoreScript(Map<String, Object> params) {
+    public VectorScoreScript(Map<String, Object> params, SearchLookup lookup, LeafReaderContext leafContext) {
+        super(params, lookup, leafContext);
+        this.lookup = lookup;
+        this.leafContext = leafContext;
         final Object metricConf = params.get("metric");
         MetricProvider metricProvider = metricConf != null ?
                 metrics.get(metricConf) :
                 metrics.get("dot");
-
         final Object field = params.get("field");
         if (field == null)
             throw new IllegalArgumentException("binary_vector_score script requires field input");
         this.field = field.toString();
+        try {
+            this.binaryValues = this.leafContext.reader().getBinaryDocValues(this.field);
+        } catch (Exception e){
+            throw new RuntimeException("Failed to get binary doc values" , e);
+        }
 
         // get query inputVector - convert to primitive
         final Object vector = params.get("vector");
@@ -150,24 +110,36 @@ public final class VectorScoreScript implements LeafSearchScript, ExecutableScri
      * @return cosine similarity of the current document against the input inputVector
      */
     @Override
-    public final Object run() {
+    public final double execute() {
         final int size = inputVector.length;
+        try{
+            this.binaryValues.advance(docId);
+            if(this.binaryValues.docID() != this.docId) {
+                throw new RuntimeException("Got doc "+this.binaryValues.docID()+" expected "+docId);
+            }
+            byte[] bytes = this.binaryValues.binaryValue().bytes;
+            LeafDocLookup leafDocLookup = this.lookup.doc().getLeafDocLookup(this.leafContext);
+            final ByteArrayDataInput input = new ByteArrayDataInput(bytes);
+            input.readVInt(); // returns the number of values which should be 1, MUST appear hear since it affect the next calls
+            final int len = input.readVInt(); // returns the number of bytes to read
+            if(len != size * DOUBLE_SIZE) {
+                return 0.0;
+            }
+            final int position = input.getPosition();
+            final DoubleBuffer doubleBuffer = ByteBuffer.wrap(bytes, position, len).asDoubleBuffer();
 
-        final byte[] bytes = binaryEmbeddingReader.get(docId).bytes;
-        final ByteArrayDataInput input = new ByteArrayDataInput(bytes);
-        input.readVInt(); // returns the number of values which should be 1, MUST appear hear since it affect the next calls
-        final int len = input.readVInt(); // returns the number of bytes to read
-        if(len != size * DOUBLE_SIZE) {
-            return 0.0;
+            final double[] docVector = new double[size];
+            doubleBuffer.get(docVector);
+
+            double score = metric.metric(docVector);
+            return score;
+        } catch (Exception e){
+            throw new RuntimeException("Failed to get binary doc values" , e);
         }
-        final int position = input.getPosition();
-        final DoubleBuffer doubleBuffer = ByteBuffer.wrap(bytes, position, len).asDoubleBuffer();
 
-        final double[] docVector = new double[size];
-        doubleBuffer.get(docVector);
-
-        double score = metric.metric(docVector);
-        return score;
     }
+
+
+
 
 }

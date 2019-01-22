@@ -1,5 +1,6 @@
 package com.liorkn.elasticsearch;
 
+import org.elasticsearch.common.logging.LogConfigurator;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.InternalSettingsPreparer;
 import org.elasticsearch.node.Node;
@@ -14,7 +15,11 @@ public class NodeExt extends Node {
 
     public NodeExt(Settings preparedSettings, Collection<Class<? extends Plugin>> classpathPlugins) {
         super(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null),
-                classpathPlugins);
+                classpathPlugins, false);
     }
 
+    @Override
+    protected void registerDerivedNodeNameWithLogger(String nodeName) {
+        LogConfigurator.setNodeName(nodeName);
+    }
 }

@@ -7,7 +7,7 @@
     <name>elasticsearch-binary-vector-scoring</name>
     <groupId>com.liorkn.elasticsearch</groupId>
     <artifactId>elasticsearch-binary-vector-scoring</artifactId>
-    <version>5.6.14</version>
+    <version>6.5.4</version>
     <description>ElasticSearch Plugin for Binary Vector Scoring</description>
     
     <licenses>
@@ -27,9 +27,9 @@
         <elasticsearch.license.headerDefinition>${project.basedir}/src/main/resources/license-check/license_header_definition.xml</elasticsearch.license.headerDefinition>
 
         <tests.ifNoTests>warn</tests.ifNoTests>
-        <elasticsearch.version>5.6.14</elasticsearch.version>
-        <elasticsearch.version.manifest>5.6.14</elasticsearch.version.manifest>
-        <elasticsearch.test.version>5.6.0</elasticsearch.test.version>
+        <elasticsearch.version>6.5.4</elasticsearch.version>
+        <elasticsearch.version.manifest>6.5.4</elasticsearch.version.manifest>
+        <elasticsearch.test.version>6.5.4</elasticsearch.test.version>
         <commons-io.version>2.4</commons-io.version>
         <httpcore.version>4.4.8</httpcore.version>
         <junit.version>4.12</junit.version>
@@ -67,7 +67,7 @@
 
         <dependency>
             <groupId>org.elasticsearch.plugin</groupId>
-            <artifactId>transport-netty3-client</artifactId>
+            <artifactId>transport-netty4-client</artifactId>
             <version>${elasticsearch.version}</version>
             <scope>test</scope>
         </dependency>

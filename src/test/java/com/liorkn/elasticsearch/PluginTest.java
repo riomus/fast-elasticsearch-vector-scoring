@@ -92,7 +92,7 @@ public class PluginTest {
                 "      \"boost_mode\": \"replace\"," +
                 "      \"script_score\": {" +
                 "        \"script\": {" +
-                "          \"inline\": \"binary_vector_score\"," +
+                "          \"source\": \"binary_vector_score\"," +
                 "          \"lang\": \"knn\"," +
                 "          \"params\": {" +
                 "            \"metric\": \"cosine\"," +
@@ -141,7 +141,7 @@ public class PluginTest {
                 "      \"boost_mode\": \"replace\"," +
                 "      \"script_score\": {" +
                 "        \"script\": {" +
-                "          \"inline\": \"binary_vector_score\"," +
+                "          \"source\": \"binary_vector_score\"," +
                 "          \"lang\": \"knn\"," +
                 "          \"params\": {" +
                 "            \"metric\": \"tsss\"," +
@@ -161,7 +161,7 @@ public class PluginTest {
         final String resBody = EntityUtils.toString(res.getEntity());
         System.out.println(resBody);
         Assert.assertEquals("search should return status code 200", 200, res.getStatusLine().getStatusCode());
-        Assert.assertTrue(String.format("There should be %d documents in the search response", objs.length), resBody.contains("\"hits\":{\"total\":" + objs.length));
+        Assert.assertTrue(String.format("There should be %d documents in the search response %s", objs.length, resBody), resBody.contains("\"hits\":{\"total\":" + objs.length));
     }
     @Test
     public void testTSSSSameVectors() throws Exception {
@@ -189,7 +189,7 @@ public class PluginTest {
                 "      \"boost_mode\": \"replace\"," +
                 "      \"script_score\": {" +
                 "        \"script\": {" +
-                "          \"inline\": \"binary_vector_score\"," +
+                "          \"source\": \"binary_vector_score\"," +
                 "          \"lang\": \"knn\"," +
                 "          \"params\": {" +
                 "            \"metric\": \"tsss\"," +
@@ -239,7 +239,7 @@ public class PluginTest {
                 "      \"boost_mode\": \"replace\"," +
                 "      \"script_score\": {" +
                 "        \"script\": {" +
-                "          \"inline\": \"binary_vector_score\"," +
+                "          \"source\": \"binary_vector_score\"," +
                 "          \"lang\": \"knn\"," +
                 "          \"params\": {" +
                 "            \"metric\": \"euclidean\"," +
