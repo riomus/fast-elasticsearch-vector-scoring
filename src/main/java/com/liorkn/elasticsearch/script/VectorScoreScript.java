@@ -57,6 +57,7 @@ public final class VectorScoreScript extends ScoreScript {
         put("dot", new DotMetricProvider());
         put("tsss", new TSSSMetricProvider());
         put("euclidean", new EuclideanMetricProvider());
+        put("chisquared", new ChiSquaredMetricProvider());
     }};
 
     private final Metric metric;

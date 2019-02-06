@@ -212,6 +212,54 @@ public class PluginTest {
         Assert.assertTrue(String.format("There should be %d documents in the search response", objs.length), resBody.contains("\"hits\":{\"total\":" + objs.length));
     }
 
+    @Test
+    public void testChiSquared() throws Exception {
+        final Map<String, String> params = new HashMap<>();
+        params.put("refresh", "true");
+        final ObjectMapper mapper = new ObjectMapper();
+        final TestObject[] objs = {new TestObject(1, new double[] {0.0, 0.5, 1.0}),
+                new TestObject(2, new double[] {0.2, 0.6, 0.99})};
+
+        for (int i = 0; i < objs.length; i++) {
+            final TestObject t = objs[i];
+            final String json = mapper.writeValueAsString(t);
+            System.out.println(json);
+            final Response put = esClient.performRequest("PUT", "/test/type/" + t.jobId, params, new StringEntity(json, ContentType.APPLICATION_JSON));
+            System.out.println(put);
+            System.out.println(EntityUtils.toString(put.getEntity()));
+            final int statusCode = put.getStatusLine().getStatusCode();
+            Assert.assertTrue(statusCode == 200 || statusCode == 201);
+        }
+
+        // Test cosine score function
+        String body = "{" +
+                "  \"query\": {" +
+                "    \"function_score\": {" +
+                "      \"boost_mode\": \"replace\"," +
+                "      \"script_score\": {" +
+                "        \"script\": {" +
+                "          \"source\": \"binary_vector_score\"," +
+                "          \"lang\": \"knn\"," +
+                "          \"params\": {" +
+                "            \"metric\": \"chisquared\"," +
+                "            \"field\": \"embedding_vector\"," +
+                "            \"vector\": [" +
+                "               0.1, 0.2, 0.3" +
+                "             ]" +
+                "          }" +
+                "        }" +
+                "      }" +
+                "    }" +
+                "  }," +
+                "  \"size\": 100" +
+                "}";
+        final Response res = esClient.performRequest("POST", "/test/_search", Collections.emptyMap(), new NStringEntity(body, ContentType.APPLICATION_JSON));
+        System.out.println(res);
+        final String resBody = EntityUtils.toString(res.getEntity());
+        System.out.println(resBody);
+        Assert.assertEquals("search should return status code 200", 200, res.getStatusLine().getStatusCode());
+        Assert.assertTrue(String.format("There should be %d documents in the search response", objs.length), resBody.contains("\"hits\":{\"total\":" + objs.length));
+    }
 
     @Test
     public void testEuclidean() throws Exception {
